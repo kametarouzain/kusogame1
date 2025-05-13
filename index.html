@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>井筒の伝説</title>
+<style>
+  body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f0f0;
+  }
+  canvas {
+    display: block;
+    background-color: #222;
+  }
+  #startButton, #oniButton {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px 40px;
+    font-size: 32px;
+    cursor: pointer;
+    color: white;
+    border: none;
+    border-radius: 10px;
+  }
+  #startButton {
+    top: 50%;
+    background-color: #4CAF50;
+  }
+  #startButton:hover {
+    background-color: #45a049;
+  }
+  #oniButton {
+    top: 60%;
+    background-color: darkred;
+  }
+  #oniButton:hover {
+    background-color: crimson;
+  }
+  #gameTitle {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: white;
+    font-family: sans-serif;
+  }
+  #message {
+    position: absolute;
+    color: white;
+    font-size: 24px;
+    top: 60%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+    z-index: 10;
+  }
+  #topButton {
+    display: none;
+    position: absolute;
+    top: 70%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 10px 30px;
+    font-size: 24px;
+    background-color: #c00;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <div id="gameTitle">井筒の伝説</div>
+  <canvas id="gameCanvas" width="640" height="960"></canvas>
+  <button id="startButton">ゲームスタート</button>
+  <button id="oniButton">鬼モードで開始</button>
+  <div id="message"></div>
+  <div id="topButton">TOPに戻る</div>
+  <script src="script.js"></script>
+</body>
+</html>
