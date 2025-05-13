@@ -1,0 +1,92 @@
+body {
+  margin: 0;
+  background-color: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+#gameContainer {
+  position: relative;
+  width: 480px;
+  height: 640px;
+}
+
+#gameCanvas {
+  width: 100%;
+  height: 100%;
+  background-color: #222;
+  display: block;
+}
+
+#overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  pointer-events: auto;
+}
+
+#gameTitle {
+  font-size: 48px;
+  color: white;
+  margin-bottom: 40px;
+  text-shadow: 2px 2px 4px #000;
+}
+
+#startButton, #oniButton, #topButton {
+  padding: 20px 40px;
+  font-size: 28px;
+  cursor: pointer;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  margin: 10px;
+}
+
+#startButton {
+  background-color: #4CAF50;
+}
+
+#startButton:hover {
+  background-color: #45a049;
+}
+
+#oniButton {
+  background-color: darkred;
+}
+
+#oniButton:hover {
+  background-color: crimson;
+}
+
+#message {
+  position: absolute;
+  color: white;
+  font-size: 24px;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#topButton {
+  display: none;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #c00;
+}
+
+#topButton:hover {
+  background-color: #e60000;
+}

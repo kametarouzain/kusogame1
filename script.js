@@ -27,6 +27,7 @@ const explosionSE = new Audio('explosion.mp3');
 const itemSE = new Audio('item.mp3');
 const bossSE = new Audio('boss.mp3');
 
+// プレイヤー設定
 let player = {
   x: canvas.width / 2 - 16,
   y: canvas.height - 60,
@@ -48,6 +49,8 @@ let bossPhase = 1;
 let bossSpeed = 2;
 let bossCount = 0;
 let lastShotTime = 0;
+let invincible = false;
+let invincibleTimer = 0;
 
 // イベントリスナー
 document.addEventListener('keydown', (e) => keys[e.key] = true);
@@ -58,24 +61,48 @@ document.getElementById('startButton').addEventListener('click', () => {
   document.getElementById('startButton').style.display = 'none';
   document.getElementById('oniButton').style.display = 'none';
   document.getElementById('gameTitle').style.display = 'none';
-  player.hp = 3;
+  document.getElementById('message').innerText = '';
+  player.hp = oniMode ? 2 : 3;
   bgm.loop = true;
   bgm.play();
   gameLoop();
 });
 
-// 鬼モード開始ボタン
+// 鬼モード
 document.getElementById('oniButton').addEventListener('click', () => {
   oniMode = true;
-  player.hp = 2;
   document.getElementById('startButton').click(); // 通常スタート処理を流用
 });
 
-// TOPボタンで再読み込み
+// TOPボタン
 document.getElementById('topButton').addEventListener('click', () => {
   location.reload();
 });
 
+// 敵出現
+setInterval(() => {
+  const enemyTypes = ['momo', 'shishi', 'yuki', 'zain'];
+  const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+  enemies.push({
+    x: Math.random() * (canvas.width - 32),
+    y: -32,
+    width: 32,
+    height: 32,
+    type: type
+  });
+}, 1000);
+
+// アイテム出現
+setInterval(() => {
+  items.push({
+    x: Math.random() * (canvas.width - 32),
+    y: -32,
+    width: 32,
+    height: 32
+  });
+}, 10000);
+
+// 描画処理
 function draw() {
   ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
   ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
@@ -99,18 +126,19 @@ function draw() {
   if (boss) {
     ctx.drawImage(bossImage, boss.x, boss.y, boss.width, boss.height);
   }
+  ctx.font = "16px sans-serif";
   ctx.fillStyle = 'white';
   ctx.fillText(`Score: ${score}`, 10, 20);
   ctx.fillText(`HP: ${player.hp}`, 10, 40);
 }
 
+// 更新処理
 function update() {
   if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
   if (keys['ArrowRight'] && player.x < canvas.width - player.width) player.x += player.speed;
   if (keys['ArrowUp'] && player.y > 0) player.y -= player.speed;
   if (keys['ArrowDown'] && player.y < canvas.height - player.height) player.y += player.speed;
 
-  // スペースでショット
   if (keys[' '] && Date.now() - lastShotTime > 250) {
     playerBullets.push({
       x: player.x + player.width / 2 - 4,
@@ -123,33 +151,29 @@ function update() {
     lastShotTime = Date.now();
   }
 
-  for (let bullet of playerBullets) bullet.y -= 8;
-  for (let bullet of enemyBullets) {
-    bullet.y += 4;
-    if (bullet.wave) {
-      bullet.time++;
-      bullet.x += Math.sin(bullet.time / 5) * 2;
+  playerBullets.forEach(b => b.y -= 8);
+  enemyBullets.forEach(b => {
+    b.y += 4;
+    if (b.wave) {
+      b.time++;
+      b.x += Math.sin(b.time / 5) * 2;
     }
-  }
+  });
 
-  for (let enemy of enemies) {
-    enemy.y += 2;
-    if (enemy.type === 'shishi') enemy.x += Math.sin(Date.now() / 100) * 4;
-    if (enemy.type === 'momo' && Math.random() < 0.5) fireEnemyBullet(enemy);
-    if (enemy.type === 'yuki') fireWavyBullet(enemy);
-  }
+  enemies.forEach(e => {
+    e.y += 2;
+    if (e.type === 'shishi') e.x += Math.sin(Date.now() / 100) * 4;
+    if (e.type === 'momo' && Math.random() < 0.5) fireEnemyBullet(e);
+    if (e.type === 'yuki') fireWavyBullet(e);
+  });
 
-  for (let item of items) item.y += 2;
+  items.forEach(i => i.y += 2);
 
+  // 弾と敵の当たり判定
   for (let i = playerBullets.length - 1; i >= 0; i--) {
     for (let j = enemies.length - 1; j >= 0; j--) {
       const e = enemies[j];
-      if (
-        playerBullets[i].x < e.x + e.width &&
-        playerBullets[i].x + playerBullets[i].width > e.x &&
-        playerBullets[i].y < e.y + e.height &&
-        playerBullets[i].y + playerBullets[i].height > e.y
-      ) {
+      if (collision(playerBullets[i], e)) {
         e.hp = (e.hp || (oniMode ? 2 : 1)) - 1;
         playerBullets.splice(i, 1);
         if (e.hp <= 0) {
@@ -163,25 +187,28 @@ function update() {
     }
   }
 
-  for (let bullet of enemyBullets) {
-    if (
-      bullet.x < player.x + player.width &&
-      bullet.x + bullet.width > player.x &&
-      bullet.y < player.y + player.height &&
-      bullet.y + bullet.height > player.y
-    ) {
-      player.hp--;
-      bullet.y = canvas.height + 1;
+  // 敵弾とプレイヤー
+  if (!invincible) {
+    for (let b of enemyBullets) {
+      if (collision(b, player)) {
+        player.hp--;
+        b.y = canvas.height + 1;
+        invincible = true;
+        invincibleTimer = 60;
+        break;
+      }
     }
   }
 
+  // 無敵時間
+  if (invincible) {
+    invincibleTimer--;
+    if (invincibleTimer <= 0) invincible = false;
+  }
+
+  // アイテムとプレイヤー
   for (let i = items.length - 1; i >= 0; i--) {
-    if (
-      items[i].x < player.x + player.width &&
-      items[i].x + items[i].width > player.x &&
-      items[i].y < player.y + player.height &&
-      items[i].y + items[i].height > player.y
-    ) {
+    if (collision(items[i], player)) {
       itemSE.currentTime = 0;
       itemSE.play();
       player.hp++;
@@ -189,6 +216,7 @@ function update() {
     }
   }
 
+  // ボス出現
   if ((oniMode ? score >= 100 * (bossCount + 1) : score >= 100 && !boss)) {
     bossSE.play();
     boss = {
@@ -198,22 +226,24 @@ function update() {
       height: 128
     };
     bossHP = oniMode && bossCount === 1 ? 200 : 100;
+    bossPhase = 1;
     bossCount++;
   }
 
+  // ボス移動とフェーズ
   if (boss) {
     if (boss.y < 100) boss.y += bossSpeed / 2;
     else boss.x += Math.sin(Date.now() / 500) * bossSpeed;
+    if (bossHP <= 50 && bossPhase === 1) {
+      bossPhase = 2;
+      bossSpeed += 1;
+    }
     if (bossHP > 0) fireBossBullet();
   }
 
+  // ボスとプレイヤー弾
   for (let i = playerBullets.length - 1; i >= 0; i--) {
-    if (boss &&
-      playerBullets[i].x < boss.x + boss.width &&
-      playerBullets[i].x + playerBullets[i].width > boss.x &&
-      playerBullets[i].y < boss.y + boss.height &&
-      playerBullets[i].y + playerBullets[i].height > boss.y
-    ) {
+    if (boss && collision(playerBullets[i], boss)) {
       bossHP--;
       playerBullets.splice(i, 1);
       if (bossHP <= 0) {
@@ -224,23 +254,36 @@ function update() {
     }
   }
 
+  // ゲームオーバー
   if (player.hp <= 0) {
     alert('Game Over');
     document.location.reload();
   }
 
-  // 「あんたが伝説！！」
+  // 勝利判定
   if ((oniMode && score >= 10000) || (!oniMode && score >= 3000)) {
     document.getElementById('message').innerText = 'あんたが伝説！！';
     document.getElementById('message').style.color = 'red';
     document.getElementById('topButton').style.display = 'block';
-    cancelAnimationFrame(gameLoop);
     bgm.pause();
+    return;
   }
+
+  // 画面外削除
+  playerBullets = playerBullets.filter(b => b.y + b.height > 0);
+  enemyBullets = enemyBullets.filter(b => b.y < canvas.height);
+  enemies = enemies.filter(e => e.y < canvas.height);
+  items = items.filter(i => i.y < canvas.height);
 }
 
+// 衝突判定
+function collision(a, b) {
+  return a.x < b.x + b.width && a.x + a.width > b.x &&
+         a.y < b.y + b.height && a.y + a.height > b.y;
+}
+
+// 弾発射関数
 function fireBossBullet() {
-  if (!boss) return;
   const rate = oniMode ? 0.2 : 0.05;
   if (Math.random() < rate) {
     enemyBullets.push({
@@ -274,19 +317,21 @@ function fireWavyBullet(enemy) {
   }
 }
 
+// メインループ
 function gameLoop() {
   update();
   draw();
   requestAnimationFrame(gameLoop);
 }
 
+// 読み込み確認
 let assetsLoaded = 0;
 const totalAssets = 11;
 [playerImage, enemyImage, momoImage, shishiImage, yukiImage, zainImage, playerBulletImage, enemyBulletImage, itemImage, bossImage, backgroundImage].forEach(img => {
   img.onload = () => {
     assetsLoaded++;
     if (assetsLoaded === totalAssets) {
-      // 待機中（ボタンでゲームスタート）
+      // 全アセット読み込み済み
     }
   };
 });

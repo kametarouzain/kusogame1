@@ -1,0 +1,18 @@
+
+画像一覧
+idutu.png — プレイヤー画像
+playerBullet.png — プレイヤーの弾
+enemyBullet.png — 敵の弾
+item.png — アイテム
+boss.png — ボスキャラ
+background.png — 背景画像
+なお、他の画像形式（JPGなど）
+polka.jpg — 通常の敵キャラ（デフォルト）
+momosuzu.png, shishiro.png, yukihana.png, zain.png — 敵キャラのバリエーション
+
+使用中の音声ファイル一覧（MP3）
+bgm.mp3 — バックグラウンドミュージック（ループ再生）
+shot.mp3 — プレイヤーの弾発射音
+explosion.mp3 — 敵やボスの爆発音
+item.mp3 — アイテム取得時の効果音
+boss.mp3 — ボス登場時の効果音
