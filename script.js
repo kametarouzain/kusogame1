@@ -9,7 +9,7 @@ let oniMode = false;
 
 // 画像読み込み
 const playerImage = new Image(); playerImage.src = 'idutu.png';
-const enemyImage = new Image(); enemyImage.src = 'polka.jpg';
+const enemyImage = new Image(); enemyImage.src = 'polka.png'; // 変更
 const momoImage = new Image(); momoImage.src = 'momosuzu.png';
 const shishiImage = new Image(); shishiImage.src = 'shishiro.png';
 const yukiImage = new Image(); yukiImage.src = 'yukihana.png';
@@ -17,13 +17,14 @@ const zainImage = new Image(); zainImage.src = 'zain.png';
 const playerBulletImage = new Image(); playerBulletImage.src = 'playerBullet.png';
 const enemyBulletImage = new Image(); enemyBulletImage.src = 'enemyBullet.png';
 const itemImage = new Image(); itemImage.src = 'item.png';
+const bombImage = new Image(); bombImage.src = 'bomb.png'; // 追加
 const bossImage = new Image(); bossImage.src = 'boss.png';
 const backgroundImage = new Image(); backgroundImage.src = 'background.png';
 
 // 音声読み込み
 const bgm = new Audio('bgm.mp3');
 const shotSE = new Audio('shot.mp3');
-const explosionSE = new Audio('explosion.mp3');
+const explosionSE = new Audio('explosion.mp3'); // 変更
 const itemSE = new Audio('item.mp3');
 const bossSE = new Audio('boss.mp3');
 
@@ -34,7 +35,8 @@ let player = {
   width: 32,
   height: 32,
   speed: 5,
-  hp: 3
+  hp: 3,
+  lives: 5 // ノーマルモードの残機
 };
 
 let enemies = [];
@@ -47,92 +49,98 @@ let boss = null;
 let bossHP = 100;
 let bossPhase = 1;
 let bossSpeed = 2;
-let bossCount = 0;
 let lastShotTime = 0;
 let invincible = false;
 let invincibleTimer = 0;
+let gameRunning = true; // ゲームが進行中かどうかを管理するフラグ
 
-// イベントリスナー
-document.addEventListener('keydown', (e) => keys[e.key] = true);
-document.addEventListener('keyup', (e) => keys[e.key] = false);
-
-// スタート（通常モード）
-document.getElementById('startButton').addEventListener('click', () => {
-  document.getElementById('startButton').style.display = 'none';
-  document.getElementById('oniButton').style.display = 'none';
-  document.getElementById('gameTitle').style.display = 'none';
-  document.getElementById('message').innerText = '';
-  player.hp = oniMode ? 2 : 3;
-  bgm.loop = true;
-  bgm.play();
-  gameLoop();
+let assetsLoaded = 0;
+const totalAssets = 12; // 変更
+[playerImage, enemyImage, momoImage, shishiImage, yukiImage, zainImage, playerBulletImage, enemyBulletImage, itemImage, bombImage, bossImage, backgroundImage].forEach(img => {
+  img.onload = () => {
+    assetsLoaded++;
+    if (assetsLoaded === totalAssets) {
+      document.getElementById('startButton').disabled = false;
+      document.getElementById('oniButton').disabled = false;
+    }
+  };
 });
 
-// 鬼モード
+addEventListener('keydown', (e) => keys[e.key] = true);
+addEventListener('keyup', (e) => keys[e.key] = false);
+
+document.getElementById('startButton').addEventListener('click', () => {
+  oniMode = false;
+  startGame();
+});
+
 document.getElementById('oniButton').addEventListener('click', () => {
   oniMode = true;
-  document.getElementById('startButton').click(); // 通常スタート処理を流用
+  startGame();
 });
 
-// TOPボタン
 document.getElementById('topButton').addEventListener('click', () => {
   location.reload();
 });
 
-// 敵出現
-setInterval(() => {
-  const enemyTypes = ['momo', 'shishi', 'yuki', 'zain'];
-  const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+function startGame() {
+  document.getElementById('overlay').style.display = 'none';
+  player.hp = oniMode ? 2 : 3;
+  player.lives = oniMode ? 2 : 5; // モードに応じた残機設定
+  bgm.loop = true;
+  bgm.play();
+  gameRunning = true;
+  boss = null; // ボスをリセット
+  score = 0; // スコアをリセット
+  enemies = []; // 敵をリセット
+  playerBullets = [];
+  enemyBullets = [];
+  items = [];
+  gameLoop();
+  setInterval(spawnEnemy, 1000);
+  setInterval(spawnItem, 10000);
+  setInterval(spawnBomb, 15000); // bombアイテムの出現
+}
+
+function spawnEnemy() {
+  const types = ['momo', 'shishi', 'yuki', 'zain'];
+  const type = types[Math.floor(Math.random() * types.length)];
   enemies.push({
-    x: Math.random() * (canvas.width - 32),
-    y: -32,
-    width: 32,
-    height: 32,
+    x: Math.random() * (canvas.width - 48), // サイズ変更
+    y: -48, // サイズ変更
+    width: 48, // サイズ変更
+    height: 48, // サイズ変更
     type: type
   });
-}, 1000);
+}
 
-// アイテム出現
-setInterval(() => {
+function spawnItem() {
   items.push({
     x: Math.random() * (canvas.width - 32),
     y: -32,
     width: 32,
     height: 32
   });
-}, 10000);
-
-// 描画処理
-function draw() {
-  ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-  ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
-  for (let enemy of enemies) {
-    let img = enemyImage;
-    if (enemy.type === 'momo') img = momoImage;
-    else if (enemy.type === 'shishi') img = shishiImage;
-    else if (enemy.type === 'yuki') img = yukiImage;
-    else if (enemy.type === 'zain') img = zainImage;
-    ctx.drawImage(img, enemy.x, enemy.y, enemy.width, enemy.height);
-  }
-  for (let bullet of playerBullets) {
-    ctx.drawImage(playerBulletImage, bullet.x, bullet.y, bullet.width, bullet.height);
-  }
-  for (let bullet of enemyBullets) {
-    ctx.drawImage(enemyBulletImage, bullet.x, bullet.y, bullet.width, bullet.height);
-  }
-  for (let item of items) {
-    ctx.drawImage(itemImage, item.x, item.y, item.width, item.height);
-  }
-  if (boss) {
-    ctx.drawImage(bossImage, boss.x, boss.y, boss.width, boss.height);
-  }
-  ctx.font = "16px sans-serif";
-  ctx.fillStyle = 'white';
-  ctx.fillText(`Score: ${score}`, 10, 20);
-  ctx.fillText(`HP: ${player.hp}`, 10, 40);
 }
 
-// 更新処理
+function spawnBomb() {
+  items.push({
+    x: Math.random() * (canvas.width - 32),
+    y: -32,
+    width: 32,
+    height: 32,
+    type: 'bomb' // bombアイテム
+  });
+}
+
+function gameLoop() {
+  if (gameRunning) {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+}
+
 function update() {
   if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
   if (keys['ArrowRight'] && player.x < canvas.width - player.width) player.x += player.speed;
@@ -169,7 +177,6 @@ function update() {
 
   items.forEach(i => i.y += 2);
 
-  // 弾と敵の当たり判定
   for (let i = playerBullets.length - 1; i >= 0; i--) {
     for (let j = enemies.length - 1; j >= 0; j--) {
       const e = enemies[j];
@@ -180,18 +187,17 @@ function update() {
           explosionSE.currentTime = 0;
           explosionSE.play();
           enemies.splice(j, 1);
-          score += 10;
+          score += 100; // 倒した敵のポイントを100点に変更
         }
         break;
       }
     }
   }
 
-  // 敵弾とプレイヤー
   if (!invincible) {
     for (let b of enemyBullets) {
       if (collision(b, player)) {
-        player.hp--;
+        player.lives--; // 残機が減るように修正
         b.y = canvas.height + 1;
         invincible = true;
         invincibleTimer = 60;
@@ -200,24 +206,32 @@ function update() {
     }
   }
 
-  // 無敵時間
   if (invincible) {
     invincibleTimer--;
     if (invincibleTimer <= 0) invincible = false;
   }
 
-  // アイテムとプレイヤー
   for (let i = items.length - 1; i >= 0; i--) {
     if (collision(items[i], player)) {
-      itemSE.currentTime = 0;
-      itemSE.play();
-      player.hp++;
+      if (items[i].type === 'bomb') {
+        explosionSE.currentTime = 0;
+        explosionSE.play();
+        enemies.forEach(e => {
+          explosionSE.play();
+          enemies.splice(enemies.indexOf(e), 1);
+        });
+      } else {
+        itemSE.currentTime = 0;
+        itemSE.play();
+        player.hp++;
+        player.lives++; // 残機を1増やす
+      }
       items.splice(i, 1);
     }
   }
 
-  // ボス出現
-  if ((oniMode ? score >= 100 * (bossCount + 1) : score >= 100 && !boss)) {
+  // ボスの出現タイミングを3000点に変更
+  if (score >= 3000 && !boss) {
     bossSE.play();
     boss = {
       x: canvas.width / 2 - 64,
@@ -225,12 +239,10 @@ function update() {
       width: 128,
       height: 128
     };
-    bossHP = oniMode && bossCount === 1 ? 200 : 100;
+    bossHP = oniMode ? 200 : 100;
     bossPhase = 1;
-    bossCount++;
   }
 
-  // ボス移動とフェーズ
   if (boss) {
     if (boss.y < 100) boss.y += bossSpeed / 2;
     else boss.x += Math.sin(Date.now() / 500) * bossSpeed;
@@ -241,7 +253,6 @@ function update() {
     if (bossHP > 0) fireBossBullet();
   }
 
-  // ボスとプレイヤー弾
   for (let i = playerBullets.length - 1; i >= 0; i--) {
     if (boss && collision(playerBullets[i], boss)) {
       bossHP--;
@@ -250,39 +261,84 @@ function update() {
         explosionSE.play();
         boss = null;
         score += 100;
+        gameRunning = false; // ゲームを停止
+        showClearMessage(); // ボスを倒したときのメッセージ
       }
     }
   }
 
-  // ゲームオーバー
-  if (player.hp <= 0) {
-    alert('Game Over');
-    document.location.reload();
+  if (player.lives <= 0) {
+    gameRunning = false; // ゲームを停止
+    showGameOver();
   }
 
-  // 勝利判定
-  if ((oniMode && score >= 10000) || (!oniMode && score >= 3000)) {
-    document.getElementById('message').innerText = 'あんたが伝説！！';
-    document.getElementById('message').style.color = 'red';
-    document.getElementById('topButton').style.display = 'block';
-    bgm.pause();
-    return;
-  }
-
-  // 画面外削除
   playerBullets = playerBullets.filter(b => b.y + b.height > 0);
   enemyBullets = enemyBullets.filter(b => b.y < canvas.height);
   enemies = enemies.filter(e => e.y < canvas.height);
   items = items.filter(i => i.y < canvas.height);
 }
 
-// 衝突判定
+function draw() {
+  ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+  for (let enemy of enemies) {
+    let img = enemyImage;
+    if (enemy.type === 'momo') img = momoImage;
+    else if (enemy.type === 'shishi') img = shishiImage;
+    else if (enemy.type === 'yuki') img = yukiImage;
+    else if (enemy.type === 'zain') img = zainImage;
+    ctx.drawImage(img, enemy.x, enemy.y, enemy.width, enemy.height);
+  }
+  for (let bullet of playerBullets) {
+    ctx.drawImage(playerBulletImage, bullet.x, bullet.y, bullet.width, bullet.height);
+  }
+  for (let bullet of enemyBullets) {
+    ctx.drawImage(enemyBulletImage, bullet.x, bullet.y, bullet.width, bullet.height);
+  }
+  for (let item of items) {
+    if (item.type === 'bomb') {
+      ctx.drawImage(bombImage, item.x, item.y, item.width, item.height);
+    } else {
+      ctx.drawImage(itemImage, item.x, item.y, item.width, item.height);
+    }
+  }
+  if (boss) {
+    ctx.drawImage(bossImage, boss.x, boss.y, boss.width, boss.height);
+    // ボスのHPバーを表示
+    ctx.fillStyle = 'red';
+    ctx.fillRect(boss.x, boss.y - 10, boss.width, 5);
+    ctx.fillStyle = 'green';
+    ctx.fillRect(boss.x, boss.y - 10, boss.width * (bossHP / 100), 5);
+  }
+  ctx.font = "16px sans-serif";
+  ctx.fillStyle = 'white';
+  ctx.fillText(`Score: ${score}`, 10, 20);
+  ctx.fillText(`Lives: ${player.lives}`, 10, 40); // 残機表示
+}
+
+function showGameOver() {
+  // ゲームオーバー時に画面上に表示
+  document.getElementById('message').innerText = 'どんまい';
+  document.getElementById('message').style.color = 'red';
+  document.getElementById('topButton').style.display = 'block';
+  document.getElementById('overlay').style.display = 'flex'; // 追加
+  bgm.pause();
+}
+
+function showClearMessage() {
+  // ボスを倒したときに画面上に表示
+  document.getElementById('message').innerText = 'あんたが伝説！';
+  document.getElementById('message').style.color = 'gold';
+  document.getElementById('topButton').style.display = 'block';
+  document.getElementById('overlay').style.display = 'flex'; // 追加
+  bgm.pause();
+}
+
 function collision(a, b) {
   return a.x < b.x + b.width && a.x + a.width > b.x &&
          a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
-// 弾発射関数
 function fireBossBullet() {
   const rate = oniMode ? 0.2 : 0.05;
   if (Math.random() < rate) {
@@ -316,22 +372,3 @@ function fireWavyBullet(enemy) {
     });
   }
 }
-
-// メインループ
-function gameLoop() {
-  update();
-  draw();
-  requestAnimationFrame(gameLoop);
-}
-
-// 読み込み確認
-let assetsLoaded = 0;
-const totalAssets = 11;
-[playerImage, enemyImage, momoImage, shishiImage, yukiImage, zainImage, playerBulletImage, enemyBulletImage, itemImage, bossImage, backgroundImage].forEach(img => {
-  img.onload = () => {
-    assetsLoaded++;
-    if (assetsLoaded === totalAssets) {
-      // 全アセット読み込み済み
-    }
-  };
-});
