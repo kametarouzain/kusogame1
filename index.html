@@ -7,18 +7,15 @@
 </head>
 <body>
   <div id="gameContainer">
-    <canvas id="gameCanvas" width="480" height="640"></canvas>
-
+    <canvas id="gameCanvas"></canvas>
     <div id="overlay">
       <div id="gameTitle">井筒の伝説</div>
-      <button id="startButton">ゲームスタート</button>
-      <button id="oniButton">鬼モードで開始</button>
+      <button id="startButton" disabled>ノーマル</button>
+      <button id="oniButton" disabled>鬼モード</button>
+      <div id="message"></div>
+      <button id="topButton">TOPへ</button>
     </div>
-
-    <div id="message"></div>
-    <button id="topButton">TOPに戻る</button>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>

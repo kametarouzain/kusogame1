@@ -16,7 +16,7 @@ body {
 #gameCanvas {
   width: 100%;
   height: 100%;
-  background-color: #222;
+  background-color: #e65353;
   display: block;
 }
 
@@ -59,7 +59,7 @@ body {
 }
 
 #oniButton {
-  background-color: darkred;
+  background-color: rgb(195, 0, 255);
 }
 
 #oniButton:hover {
