@@ -8,25 +8,25 @@ canvas.height = 640;
 let oniMode = false;
 
 // 画像読み込み
-const playerImage = new Image(); playerImage.src = 'idutu.png';
-const enemyImage = new Image(); enemyImage.src = 'polka.png'; // 変更
-const momoImage = new Image(); momoImage.src = 'momosuzu.png';
-const shishiImage = new Image(); shishiImage.src = 'shishiro.png';
-const yukiImage = new Image(); yukiImage.src = 'yukihana.png';
-const zainImage = new Image(); zainImage.src = 'zain.png';
-const playerBulletImage = new Image(); playerBulletImage.src = 'playerBullet.png';
-const enemyBulletImage = new Image(); enemyBulletImage.src = 'enemyBullet.png';
-const itemImage = new Image(); itemImage.src = 'item.png';
-const bombImage = new Image(); bombImage.src = 'bomb.png'; // 追加
-const bossImage = new Image(); bossImage.src = 'boss.png';
-const backgroundImage = new Image(); backgroundImage.src = 'background.png';
+const playerImage = new Image(); playerImage.src = 'components/chara/idutu.png';
+const enemyImage = new Image(); enemyImage.src = 'components/chara/polka.png'; // 変更
+const momoImage = new Image(); momoImage.src = 'components/chara/momosuzu.png';
+const shishiImage = new Image(); shishiImage.src = 'components/chara/shishiro.png';
+const yukiImage = new Image(); yukiImage.src = 'components/chara/yukihana.png';
+const zainImage = new Image(); zainImage.src = 'components/chara/zain.png';
+const playerBulletImage = new Image(); playerBulletImage.src = 'components/chara/playerBullet.png';
+const enemyBulletImage = new Image(); enemyBulletImage.src = 'components/chara/enemyBullet.png';
+const itemImage = new Image(); itemImage.src = 'components/chara/item.png';
+const bombImage = new Image(); bombImage.src = 'components/chara/bomb.png'; // 追加
+const bossImage = new Image(); bossImage.src = 'components/chara/boss.png';
+const backgroundImage = new Image(); backgroundImage.src = 'components/chara/background.png';
 
 // 音声読み込み
-const bgm = new Audio('bgm.mp3');
-const shotSE = new Audio('shot.mp3');
-const explosionSE = new Audio('explosion.mp3'); // 変更
-const itemSE = new Audio('item.mp3');
-const bossSE = new Audio('boss.mp3');
+const bgm = new Audio('components/bgm/bgm.mp3');
+const shotSE = new Audio('components/bgm/shot.mp3');
+const explosionSE = new Audio('components/bgm/explosion.mp3'); // 変更
+const itemSE = new Audio('components/bgm/item.mp3');
+const bossSE = new Audio('components/bgm/boss.mp3');
 
 // プレイヤー設定
 let player = {
@@ -224,7 +224,7 @@ function update() {
         itemSE.currentTime = 0;
         itemSE.play();
         player.hp++;
-        player.lives++; // 残機を1増やす
+        player.lives++; // アイテムを取ったら残機を1増やす
       }
       items.splice(i, 1);
     }
@@ -336,7 +336,7 @@ function showClearMessage() {
 
 function collision(a, b) {
   return a.x < b.x + b.width && a.x + a.width > b.x &&
-         a.y < b.y + b.height && a.y + a.height > b.y;
+    a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
 function fireBossBullet() {
